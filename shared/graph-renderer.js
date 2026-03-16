@@ -98,8 +98,8 @@ AlgoVis.renderGraph = function (canvas, config) {
       // Arrow tip sits at the edge of the target circle
       var tipX = b.x - (dx / len) * (radius + 2);
       var tipY = b.y - (dy / len) * (radius + 2);
-      var arrowLen = 14;
-      var arrowAngle = Math.PI / 6;
+      var arrowLen = 24;
+      var arrowAngle = Math.PI / 5;
       var angle = Math.atan2(dy, dx);
       // Use a brighter color for default edges so arrows are visible
       var arrowColor = style.color === '#2a2a4a' ? '#666' : style.color;
