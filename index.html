@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS 141 Algorithm Visualizer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a0a1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+    }
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #888;
+      font-size: 1.1rem;
+      margin-bottom: 60px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 1000px;
+      width: 100%;
+    }
+    .card {
+      background: #12122a;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      border-color: #60a5fa;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(96, 165, 250, 0.15);
+    }
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .card p {
+      color: #888;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 16px;
+    }
+    .tag.greedy { background: #1a3a2a; color: #4ade80; }
+    .tag.dp { background: #3a2a1a; color: #fbbf24; }
+    .tag.dc { background: #2a1a3a; color: #c084fc; }
+    .tag.parallel { background: #1a2a3a; color: #60a5fa; }
+  </style>
+</head>
+<body>
+  <h1>CS 141 Algorithm Visualizer</h1>
+  <p class="subtitle">Interactive study tools for the final exam</p>
+
+  <div class="grid">
+    <a href="dijkstra/" class="card">
+      <div class="card-icon">&#x1F4CD;</div>
+      <h2>Dijkstra's Algorithm</h2>
+      <p>Step through SSSP with relaxations, priority queue state, and negative-edge failure mode.</p>
+      <span class="tag greedy">Greedy</span>
+    </a>
+
+    <a href="bellman-ford/" class="card">
+      <div class="card-icon">&#x1F504;</div>
+      <h2>Bellman-Ford</h2>
+      <p>DP-based SSSP with negative edge support and cycle detection.</p>
+      <span class="tag dp">DP</span>
+    </a>
+
+    <a href="mst/" class="card">
+      <div class="card-icon">&#x1F332;</div>
+      <h2>Prim's &amp; Kruskal's</h2>
+      <p>Build minimum spanning trees with cut property visualization.</p>
+      <span class="tag greedy">Greedy</span>
+    </a>
+
+    <a href="floyd-warshall/" class="card">
+      <div class="card-icon">&#x1F4CA;</div>
+      <h2>Floyd-Warshall</h2>
+      <p>All-pairs shortest paths with DP matrix visualization.</p>
+      <span class="tag dp">DP</span>
+    </a>
+
+    <a href="dp/" class="card">
+      <div class="card-icon">&#x1F4CA;</div>
+      <h2>DP Table Explorer</h2>
+      <p>Watch knapsack, LCS, and LIS tables fill cell by cell.</p>
+      <span class="tag dp">DP</span>
+    </a>
+
+    <a href="huffman/" class="card">
+      <div class="card-icon">&#x1F333;</div>
+      <h2>Huffman Coding</h2>
+      <p>Type text, watch the Huffman tree build and codes generate.</p>
+      <span class="tag greedy">Greedy</span>
+    </a>
+
+    <a href="parallel/" class="card">
+      <div class="card-icon">&#x1F500;</div>
+      <h2>Parallel Algorithms</h2>
+      <p>Visualize fork-join, reduce, prefix sum, and parallel quicksort.</p>
+      <span class="tag parallel">Parallel</span>
+    </a>
+  </div>
+</body>
+</html>
