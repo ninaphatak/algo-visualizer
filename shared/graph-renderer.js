@@ -95,19 +95,21 @@ AlgoVis.renderGraph = function (canvas, config) {
       var dx = b.x - a.x;
       var dy = b.y - a.y;
       var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      // Arrow at edge of target circle (radius away from center)
-      var tipX = b.x - (dx / len) * radius;
-      var tipY = b.y - (dy / len) * radius;
-      var arrowLen = 10;
-      var arrowAngle = Math.PI / 7;
+      // Arrow tip sits at the edge of the target circle
+      var tipX = b.x - (dx / len) * (radius + 2);
+      var tipY = b.y - (dy / len) * (radius + 2);
+      var arrowLen = 14;
+      var arrowAngle = Math.PI / 6;
       var angle = Math.atan2(dy, dx);
+      // Use a brighter color for default edges so arrows are visible
+      var arrowColor = style.color === '#2a2a4a' ? '#666' : style.color;
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(tipX, tipY);
       ctx.lineTo(tipX - arrowLen * Math.cos(angle - arrowAngle), tipY - arrowLen * Math.sin(angle - arrowAngle));
       ctx.lineTo(tipX - arrowLen * Math.cos(angle + arrowAngle), tipY - arrowLen * Math.sin(angle + arrowAngle));
       ctx.closePath();
-      ctx.fillStyle = style.color;
+      ctx.fillStyle = arrowColor;
       ctx.fill();
       ctx.restore();
     }
