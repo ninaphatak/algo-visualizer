@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bellman-Ford Algorithm — CS 141</title>
+  <link rel="stylesheet" href="../shared/style.css">
+  <style>
+    #roundDisplay {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fbbf24;
+      text-align: center;
+      padding: 10px 0;
+    }
+    #roundDisplay .sub {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: #888;
+      display: block;
+      margin-top: 2px;
+    }
+    .round-history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+    .round-history-table th,
+    .round-history-table td {
+      padding: 5px 6px;
+      text-align: center;
+      border-bottom: 1px solid #1a1a3a;
+    }
+    .round-history-table th {
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+    }
+    .round-history-table td.changed {
+      color: #fbbf24;
+      font-weight: 600;
+    }
+    #comparisonStats {
+      font-size: 0.85rem;
+      color: #888;
+      line-height: 1.6;
+    }
+    #comparisonStats .val {
+      color: #60a5fa;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <a href="../" class="back-btn">&#8592; Back</a>
+    <h1>Bellman-Ford Algorithm</h1>
+    <span class="tag dp">DP / SSSP</span>
+  </div>
+
+  <div class="main">
+    <!-- Graph Area -->
+    <div class="graph-area">
+      <canvas id="graphCanvas"></canvas>
+      <div class="controls">
+        <button id="backBtn" class="btn">&#9664; Back</button>
+        <button id="stepBtn" class="btn primary">Step &#9654;</button>
+        <button id="autoBtn" class="btn">Play</button>
+        <button id="resetBtn" class="btn danger">Reset</button>
+        <div class="speed-control">
+          <label>Speed</label>
+          <input type="range" id="speedSlider" min="100" max="1000" value="500">
+          <span id="speedLabel">500ms</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Presets -->
+      <div class="sidebar-section">
+        <h3>Graph Presets</h3>
+        <div class="preset-btns" id="presetBtns"></div>
+      </div>
+
+      <!-- Step Info -->
+      <div class="sidebar-section">
+        <h3>Step Info</h3>
+        <div class="step-info" id="stepInfo">Select a preset to begin.</div>
+      </div>
+
+      <!-- Round Counter -->
+      <div class="sidebar-section">
+        <h3>Round</h3>
+        <div id="roundDisplay">--<span class="sub">waiting</span></div>
+      </div>
+
+      <!-- Distance Table -->
+      <div class="sidebar-section">
+        <h3>Distances</h3>
+        <table class="dist-table" id="distTable">
+          <thead>
+            <tr><th>Vertex</th><th>d[v]</th><th>Parent</th></tr>
+          </thead>
+          <tbody id="distBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Round History -->
+      <div class="sidebar-section">
+        <h3>Round History</h3>
+        <div style="overflow-x:auto;">
+          <table class="round-history-table" id="roundHistory">
+            <thead id="roundHistoryHead"></thead>
+            <tbody id="roundHistoryBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Comparison Stats -->
+      <div class="sidebar-section">
+        <h3>Comparison</h3>
+        <div id="comparisonStats">Run the algorithm to see stats.</div>
+      </div>
+
+      <!-- Pseudocode -->
+      <div class="sidebar-section">
+        <h3>Pseudocode</h3>
+        <div class="pseudocode" id="pseudocode">
+          <div class="line" data-line="0">BellmanFord(G, s):</div>
+          <div class="line" data-line="1">  for each v: d[v] = INF</div>
+          <div class="line" data-line="2">  d[s] = 0</div>
+          <div class="line" data-line="3">  for k = 1 to n-1:</div>
+          <div class="line" data-line="4">    for each edge (u,v,w) in E:</div>
+          <div class="line" data-line="5">      if d[u]+w &lt; d[v]:</div>
+          <div class="line" data-line="6">        d[v] = d[u]+w</div>
+          <div class="line" data-line="7">        parent[v] = u</div>
+          <div class="line" data-line="8">  // Negative cycle check</div>
+          <div class="line" data-line="9">  for each edge (u,v,w) in E:</div>
+          <div class="line" data-line="10">    if d[u]+w &lt; d[v]: CYCLE!</div>
+          <div class="line" data-line="11">  return d[], parent[]</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/graph-presets.js"></script>
+  <script src="../shared/graph-renderer.js"></script>
+  <script src="../shared/controls.js"></script>
+  <script src="algo.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>

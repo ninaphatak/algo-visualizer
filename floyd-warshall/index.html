@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floyd-Warshall Algorithm — CS 141 Visualizer</title>
+  <link rel="stylesheet" href="../shared/style.css">
+  <style>
+    .graph-area canvas {
+      flex: 0 0 220px;
+      min-height: 200px;
+    }
+    #matrixContainer {
+      flex: 1;
+      overflow: auto;
+      border-radius: 12px;
+      background: #0d0d20;
+      border: 1px solid #1a1a3a;
+      padding: 12px;
+    }
+    #phaseDisplay {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #60a5fa;
+      padding: 8px 0;
+    }
+    #formulaBar {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      padding: 10px 14px;
+      background: #0d0d20;
+      border: 1px solid #1a1a3a;
+      border-radius: 8px;
+      color: #fbbf24;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <a href="../index.html" class="back-btn">&#8592; Back</a>
+  <h1>Floyd-Warshall Algorithm</h1>
+  <span class="tag dp">DP / All-Pairs</span>
+</div>
+
+<!-- Main Grid -->
+<div class="main">
+  <!-- Left: Graph + Matrix -->
+  <div class="graph-area">
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn" id="backBtn" disabled>&#9664; Back</button>
+      <button class="btn primary" id="stepBtn">Step &#9654;</button>
+      <button class="btn" id="autoBtn">Play</button>
+      <button class="btn danger" id="resetBtn">Reset</button>
+      <div class="speed-control">
+        <label>Speed</label>
+        <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50">
+        <span id="speedLabel">500ms</span>
+      </div>
+    </div>
+
+    <!-- Small Graph -->
+    <canvas id="graphCanvas"></canvas>
+
+    <!-- Distance Matrix -->
+    <div id="matrixContainer"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <!-- Presets -->
+    <div class="sidebar-section">
+      <h3>Graph Presets</h3>
+      <div class="preset-btns" id="presetBtns"></div>
+    </div>
+
+    <!-- Phase Display -->
+    <div class="sidebar-section">
+      <h3>Phase</h3>
+      <div id="phaseDisplay">Select a preset to begin</div>
+    </div>
+
+    <!-- Formula Bar -->
+    <div class="sidebar-section">
+      <h3>Formula</h3>
+      <div id="formulaBar">d[i][j] = min(d[i][j], d[i][k] + d[k][j])</div>
+    </div>
+
+    <!-- Step Info -->
+    <div class="sidebar-section">
+      <h3>Current Step</h3>
+      <div class="step-info" id="stepInfo">Load a graph to start.</div>
+    </div>
+
+    <!-- Pseudocode -->
+    <div class="sidebar-section">
+      <h3>Pseudocode</h3>
+      <div class="pseudocode" id="pseudocode">
+        <div class="line" data-line="0">FloydWarshall(G):</div>
+        <div class="line" data-line="1">  d[i][j] = w(i,j) or INF</div>
+        <div class="line" data-line="2">  d[v][v] = 0</div>
+        <div class="line" data-line="3">  for k = 1 to n:        // OUTERMOST</div>
+        <div class="line" data-line="4">    for i = 1 to n:</div>
+        <div class="line" data-line="5">      for j = 1 to n:</div>
+        <div class="line" data-line="6">        d[i][j] = min(d[i][j],</div>
+        <div class="line" data-line="7">          d[i][k] + d[k][j])</div>
+        <div class="line" data-line="8">  return d[][]</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts (order matters) -->
+<script src="../shared/graph-presets.js"></script>
+<script src="../shared/graph-renderer.js"></script>
+<script src="../shared/table-renderer.js"></script>
+<script src="../shared/controls.js"></script>
+<script src="algo.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>

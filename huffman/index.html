@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Huffman Coding — CS 141 Visualizer</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <a href="../index.html" class="back-btn">&#8592; Back</a>
+  <h1>Huffman Coding</h1>
+  <span class="tag greedy">Greedy</span>
+</div>
+
+<!-- Main Grid -->
+<div class="main">
+  <!-- Graph Area (left) -->
+  <div class="graph-area">
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn" id="backBtn" disabled>&#9664; Back</button>
+      <button class="btn primary" id="stepBtn">Step &#9654;</button>
+      <button class="btn" id="autoBtn">Play</button>
+      <button class="btn danger" id="resetBtn">Reset</button>
+      <div class="speed-control">
+        <label>Speed</label>
+        <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50">
+        <span id="speedLabel">500ms</span>
+      </div>
+    </div>
+
+    <!-- Tree Canvas -->
+    <canvas id="treeCanvas"></canvas>
+
+    <!-- Legend -->
+    <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap; padding-top:8px;">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#555"></div> Default</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Active</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Merged</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar (right) -->
+  <div class="sidebar">
+    <!-- Presets -->
+    <div class="sidebar-section">
+      <h3>Presets</h3>
+      <div class="preset-btns" id="presetBtns"></div>
+    </div>
+
+    <!-- Step Info -->
+    <div class="sidebar-section">
+      <h3>Current Step</h3>
+      <div class="step-info" id="stepInfo">Select a preset to begin.</div>
+    </div>
+
+    <!-- Priority Queue -->
+    <div class="sidebar-section">
+      <h3>Priority Queue (Min by Freq)</h3>
+      <div class="pq-items" id="pqDisplay"></div>
+    </div>
+
+    <!-- Frequency Table -->
+    <div class="sidebar-section">
+      <h3>Frequency Table</h3>
+      <table class="dist-table" id="freqTable">
+        <thead>
+          <tr><th>Char</th><th>Freq</th><th>Code</th></tr>
+        </thead>
+        <tbody id="freqBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Code Table (shown after done) -->
+    <div class="sidebar-section" id="codeSection" style="display:none;">
+      <h3>Huffman Codes</h3>
+      <table class="dist-table" id="codeTable">
+        <thead>
+          <tr><th>Char</th><th>Code</th><th>Bits</th></tr>
+        </thead>
+        <tbody id="codeBody"></tbody>
+      </table>
+      <div id="totalLength" style="margin-top:12px; font-size:0.95rem; font-weight:600; color:#60a5fa;"></div>
+    </div>
+
+    <!-- Pseudocode -->
+    <div class="sidebar-section">
+      <h3>Pseudocode</h3>
+      <div class="pseudocode" id="pseudocode">
+        <div class="line" data-line="0">Huffman(chars, freqs):</div>
+        <div class="line" data-line="1">  PQ = leaf nodes by freq</div>
+        <div class="line" data-line="2">  while PQ.size &gt; 1:</div>
+        <div class="line" data-line="3">    x = extractMin(PQ)</div>
+        <div class="line" data-line="4">    y = extractMin(PQ)</div>
+        <div class="line" data-line="5">    z = merge(x, y)</div>
+        <div class="line" data-line="6">    insert z into PQ</div>
+        <div class="line" data-line="7">  return root</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts (order matters) -->
+<script src="../shared/tree-renderer.js"></script>
+<script src="../shared/controls.js"></script>
+<script src="algo.js"></script>
+<script src="presets.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
