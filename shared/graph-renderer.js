@@ -90,6 +90,28 @@ AlgoVis.renderGraph = function (canvas, config) {
     ctx.stroke();
     ctx.restore();
 
+    // Draw arrowhead if directed
+    if (config.directed) {
+      var dx = b.x - a.x;
+      var dy = b.y - a.y;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      // Arrow at edge of target circle (radius away from center)
+      var tipX = b.x - (dx / len) * radius;
+      var tipY = b.y - (dy / len) * radius;
+      var arrowLen = 10;
+      var arrowAngle = Math.PI / 7;
+      var angle = Math.atan2(dy, dx);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(tipX - arrowLen * Math.cos(angle - arrowAngle), tipY - arrowLen * Math.sin(angle - arrowAngle));
+      ctx.lineTo(tipX - arrowLen * Math.cos(angle + arrowAngle), tipY - arrowLen * Math.sin(angle + arrowAngle));
+      ctx.closePath();
+      ctx.fillStyle = style.color;
+      ctx.fill();
+      ctx.restore();
+    }
+
     // Weight label
     if (edge.w !== undefined) {
       var mx = (a.x + b.x) / 2;

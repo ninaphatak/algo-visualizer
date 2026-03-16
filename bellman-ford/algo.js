@@ -5,25 +5,25 @@
 window.AlgoVis = window.AlgoVis || {};
 
 /**
- * Run Bellman-Ford algorithm on a graph.
+ * Run Bellman-Ford on a DIRECTED graph.
  * @param {number} n - number of vertices
- * @param {Array} directedEdges - array of [u, v, w] directed edges
- *        (caller must double undirected edges before calling)
+ * @param {Array} edges - array of [u, v, w] directed edges
  * @param {number} source - source vertex index
  * @returns {Array} events for step-by-step playback
  */
-AlgoVis.runBellmanFord = function (n, directedEdges, source) {
+AlgoVis.runBellmanFord = function (n, edges, source) {
   var INF = Infinity;
   var dist = Array(n).fill(INF);
   var parent = Array(n).fill(-1);
   dist[source] = 0;
 
   var events = [];
-  var roundHistory = []; // dist[] snapshot at end of each completed round
 
+  // Initial state — include the full DP table row for round 0
   events.push({
     type: 'init',
-    dist: [].concat(dist),
+    distSnapshot: [].concat(dist),
+    parentSnapshot: [].concat(parent),
     source: source
   });
 
@@ -33,47 +33,38 @@ AlgoVis.runBellmanFord = function (n, directedEdges, source) {
 
     events.push({
       type: 'round-start',
-      round: k
+      round: k,
+      distSnapshot: [].concat(dist),
+      parentSnapshot: [].concat(parent)
     });
 
-    for (var i = 0; i < directedEdges.length; i++) {
-      var e = directedEdges[i];
+    for (var i = 0; i < edges.length; i++) {
+      var e = edges[i];
       var u = e[0], v = e[1], w = e[2];
       var oldDist = dist[v];
-      var newDist = dist[u] + w;
+      var newDist = dist[u] === INF ? INF : dist[u] + w;
+      var success = newDist < oldDist;
 
-      if (dist[u] !== INF && newDist < oldDist) {
+      if (success) {
         dist[v] = newDist;
         parent[v] = u;
         anyUpdate = true;
-
-        events.push({
-          type: 'relax',
-          from: u,
-          to: v,
-          weight: w,
-          oldDist: oldDist,
-          newDist: newDist,
-          success: true,
-          distSnapshot: [].concat(dist),
-          parentSnapshot: [].concat(parent)
-        });
-      } else {
-        events.push({
-          type: 'relax-fail',
-          from: u,
-          to: v,
-          weight: w,
-          oldDist: oldDist,
-          newDist: dist[u] === INF ? INF : newDist,
-          success: false,
-          distSnapshot: [].concat(dist),
-          parentSnapshot: [].concat(parent)
-        });
       }
-    }
 
-    roundHistory.push([].concat(dist));
+      events.push({
+        type: success ? 'relax' : 'relax-fail',
+        from: u,
+        to: v,
+        weight: w,
+        edgeIndex: i,
+        round: k,
+        oldDist: oldDist,
+        newDist: newDist,
+        success: success,
+        distSnapshot: [].concat(dist),
+        parentSnapshot: [].concat(parent)
+      });
+    }
 
     events.push({
       type: 'round-end',
@@ -83,31 +74,32 @@ AlgoVis.runBellmanFord = function (n, directedEdges, source) {
       parentSnapshot: [].concat(parent)
     });
 
-    // Early termination if no updates
     if (!anyUpdate) break;
   }
 
-  // Negative cycle detection: one more pass
+  // Negative cycle detection
   var negativeCycle = false;
-  for (var i = 0; i < directedEdges.length; i++) {
-    var e = directedEdges[i];
+  for (var i = 0; i < edges.length; i++) {
+    var e = edges[i];
     var u = e[0], v = e[1], w = e[2];
     var improved = dist[u] !== INF && dist[u] + w < dist[v];
     if (improved) negativeCycle = true;
 
     events.push({
       type: 'negative-cycle-check',
-      edge: { from: u, to: v, w: w },
-      improved: improved
+      from: u, to: v, weight: w,
+      edgeIndex: i,
+      improved: improved,
+      distSnapshot: [].concat(dist),
+      parentSnapshot: [].concat(parent)
     });
   }
 
   events.push({
     type: 'done',
-    dist: [].concat(dist),
-    parent: [].concat(parent),
-    negativeCycle: negativeCycle,
-    roundHistory: roundHistory
+    distSnapshot: [].concat(dist),
+    parentSnapshot: [].concat(parent),
+    negativeCycle: negativeCycle
   });
 
   return events;
