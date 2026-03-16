@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parallel Algorithms — CS 141 Visualizer</title>
+  <link rel="stylesheet" href="../shared/style.css">
+  <style>
+    /* Array display boxes */
+    .array-display {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      padding: 8px 0;
+      min-height: 40px;
+      align-items: center;
+    }
+    .array-display .arr-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border: 1px solid #2a2a4a;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #e0e0e0;
+      background: #12122a;
+      transition: all 0.3s;
+    }
+    .array-display .arr-box.highlight-left {
+      border-color: #60a5fa;
+      background: rgba(96, 165, 250, 0.15);
+      color: #60a5fa;
+    }
+    .array-display .arr-box.highlight-right {
+      border-color: #c084fc;
+      background: rgba(192, 132, 252, 0.15);
+      color: #c084fc;
+    }
+    .array-display .arr-box.highlight-active {
+      border-color: #4ade80;
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ade80;
+    }
+    .array-display .arr-box.highlight-pivot {
+      border-color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+    }
+    .array-row {
+      margin-bottom: 6px;
+    }
+    .array-row-label {
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .work-span-display {
+      display: flex;
+      gap: 24px;
+      margin-top: 8px;
+    }
+    .work-span-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .work-span-item .value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #60a5fa;
+    }
+    .work-span-item .label {
+      font-size: 0.75rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <a href="../index.html" class="back-btn">&#8592; Back</a>
+  <h1>Parallel Algorithms</h1>
+  <span class="tag parallel">Parallel</span>
+</div>
+
+<!-- Main Grid -->
+<div class="main">
+  <!-- Graph Area (left) -->
+  <div class="graph-area">
+    <!-- Tabs -->
+    <div class="tabs" id="algoTabs">
+      <button class="tab active" data-tab="reduce">Reduce</button>
+      <button class="tab" data-tab="prefix-sum">Prefix Sum</button>
+      <button class="tab" data-tab="filter">Filter</button>
+      <button class="tab" data-tab="quicksort">Quicksort</button>
+      <button class="tab" data-tab="mergesort">Merge Sort</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn" id="backBtn" disabled>&#9664; Back</button>
+      <button class="btn primary" id="stepBtn">Step &#9654;</button>
+      <button class="btn" id="autoBtn">Play</button>
+      <button class="btn danger" id="resetBtn">Reset</button>
+      <div class="speed-control">
+        <label>Speed</label>
+        <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50">
+        <span id="speedLabel">500ms</span>
+      </div>
+    </div>
+
+    <!-- Canvas for tree -->
+    <canvas id="treeCanvas"></canvas>
+
+    <!-- Array Display below canvas -->
+    <div id="arrayDisplay"></div>
+  </div>
+
+  <!-- Sidebar (right) -->
+  <div class="sidebar">
+    <!-- Presets -->
+    <div class="sidebar-section">
+      <h3>Presets</h3>
+      <div class="preset-btns" id="presetBtns"></div>
+    </div>
+
+    <!-- Step Info -->
+    <div class="sidebar-section">
+      <h3>Current Step</h3>
+      <div class="step-info" id="stepInfo">Click Step or Play to begin.</div>
+    </div>
+
+    <!-- Work / Span -->
+    <div class="sidebar-section">
+      <h3>Complexity</h3>
+      <div id="workSpan" class="work-span-display">
+        <div class="work-span-item">
+          <div class="value" id="workValue">--</div>
+          <div class="label">Work</div>
+        </div>
+        <div class="work-span-item">
+          <div class="value" id="spanValue">--</div>
+          <div class="label">Span</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Array State -->
+    <div class="sidebar-section">
+      <h3>Array State</h3>
+      <div id="sidebarArray" class="array-display" style="font-size:0.8rem;"></div>
+    </div>
+
+    <!-- Pseudocode -->
+    <div class="sidebar-section">
+      <h3>Pseudocode</h3>
+      <div class="pseudocode" id="pseudocode"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts (order matters) -->
+<script src="../shared/tree-renderer.js"></script>
+<script src="../shared/controls.js"></script>
+<script src="algo-reduce.js"></script>
+<script src="algo-prefix-sum.js"></script>
+<script src="algo-filter.js"></script>
+<script src="algo-mergesort.js"></script>
+<script src="presets.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
