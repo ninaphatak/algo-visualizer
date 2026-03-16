@@ -70,8 +70,8 @@
       },
       input: function (p) {
         return '<div class="input-display">' +
-          '<div style="margin-bottom:4px;color:#888;">X:</div>' + charBoxes(p.X) +
-          '<div style="margin-top:8px;margin-bottom:4px;color:#888;">Y:</div>' + charBoxes(p.Y) +
+          '<div style="margin-bottom:4px;color:#888;">X (rows):</div>' + charBoxes(p.X, null, 'lcs-x') +
+          '<div style="margin-top:8px;margin-bottom:4px;color:#888;">Y (cols):</div>' + charBoxes(p.Y, null, 'lcs-y') +
           '</div>';
       },
       state: 'LCS[i][j] = LCS length of X[1..i] and Y[1..j]',
@@ -101,8 +101,8 @@
       },
       input: function (p) {
         return '<div class="input-display">' +
-          '<div style="margin-bottom:4px;color:#888;">Source X:</div>' + charBoxes(p.X) +
-          '<div style="margin-top:8px;margin-bottom:4px;color:#888;">Target Y:</div>' + charBoxes(p.Y) +
+          '<div style="margin-bottom:4px;color:#888;">Source X (rows):</div>' + charBoxes(p.X, null, 'ed-x') +
+          '<div style="margin-top:8px;margin-bottom:4px;color:#888;">Target Y (cols):</div>' + charBoxes(p.Y, null, 'ed-y') +
           '</div>';
       },
       state: 'ed[i][j] = min edits to transform X[1..i] into Y[1..j]',
@@ -111,11 +111,12 @@
     }
   };
 
-  function charBoxes(str, arr) {
+  function charBoxes(str, arr, prefix) {
     var items = arr || str.split('');
+    var pfx = prefix || 'cb';
     var html = '';
     for (var i = 0; i < items.length; i++) {
-      html += '<span class="char-box">' + items[i] + '</span>';
+      html += '<span class="char-box" id="' + pfx + '-' + i + '">' + items[i] + '</span>';
     }
     return html;
   }
@@ -488,6 +489,39 @@
     }
   }
 
+  // ---- Highlight current characters in string inputs (LCS, Edit Distance) ----
+  function highlightCurrentChars(evt) {
+    // Clear all highlights first
+    var allBoxes = document.querySelectorAll('#inputDisplay .char-box');
+    allBoxes.forEach(function (b) { b.classList.remove('active'); });
+
+    if (!evt || evt.type !== 'fill-cell') return;
+
+    var r = evt.row, c = evt.col;
+
+    if (activeTab === 'lcs') {
+      // row = i (1-indexed into X), col = j (1-indexed into Y)
+      // row 0 and col 0 are base cases
+      if (r > 0) {
+        var xEl = document.getElementById('lcs-x-' + (r - 1));
+        if (xEl) xEl.classList.add('active');
+      }
+      if (c > 0) {
+        var yEl = document.getElementById('lcs-y-' + (c - 1));
+        if (yEl) yEl.classList.add('active');
+      }
+    } else if (activeTab === 'editDistance') {
+      if (r > 0) {
+        var xEl = document.getElementById('ed-x-' + (r - 1));
+        if (xEl) xEl.classList.add('active');
+      }
+      if (c > 0) {
+        var yEl = document.getElementById('ed-y-' + (c - 1));
+        if (yEl) yEl.classList.add('active');
+      }
+    }
+  }
+
   // ---- Main event handler ----
   function onEvent(evt, index) {
     if (evt.type === 'init') {
@@ -499,6 +533,7 @@
     showLiveRecurrence(evt);
     showStepInfo(evt, index);
     highlightCurrentItem(evt);
+    highlightCurrentChars(evt);
   }
 
   // ---- Run algorithm ----
