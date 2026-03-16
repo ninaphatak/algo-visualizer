@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dynamic Programming Explorer — CS 141 Visualizer</title>
   <link rel="stylesheet" href="../shared/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <style>
     /* Problem statement */
     .problem-box {
@@ -76,11 +78,12 @@
       background: #0e0e24;
       border: 1px solid #1a1a3a;
       border-radius: 8px;
-      padding: 12px;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.82rem;
-      line-height: 1.8;
+      padding: 14px;
+      line-height: 2;
+      overflow-x: auto;
     }
+    .recurrence-box .katex { font-size: 1.05rem; }
+    .recurrence-box .katex-display { margin: 4px 0; }
     .recurrence-box .skip-val { color: #fbbf24; }
     .recurrence-box .take-val { color: #4ade80; }
     .recurrence-box .result { color: #60a5fa; font-weight: 700; }

@@ -206,8 +206,8 @@
     // Input display
     inputDisplay.innerHTML = prob.input(preset);
 
-    // Recurrence template
-    recurrenceBox.innerHTML = prob.recurrenceTemplate;
+    // Recurrence template — will be rendered by showLiveRecurrence on init event
+    recurrenceBox.innerHTML = prob.recurrenceTemplate || '&mdash;';
   }
 
   // ---- Table state management ----
@@ -272,54 +272,187 @@
     });
   }
 
-  // ---- Live recurrence with actual values ----
+  // ---- Live recurrence with KaTeX math rendering ----
+  function renderKatex(latex, el) {
+    if (typeof katex !== 'undefined') {
+      try { katex.render(latex, el, { displayMode: true, throwOnError: false }); return; }
+      catch (e) { /* fallback */ }
+    }
+    // Fallback if KaTeX not loaded yet
+    el.textContent = latex;
+  }
+
   function showLiveRecurrence(evt) {
     if (!evt || evt.type !== 'fill-cell') {
-      var prob = PROBLEMS[activeTab];
-      recurrenceBox.innerHTML = prob ? prob.recurrenceTemplate : '&mdash;';
+      // Show the general recurrence template in KaTeX
+      var templates = {
+        knapsack01: 'DP[i][j] = \\max\\bigl(\\underbrace{DP[i\\!-\\!1][j]}_{\\color{#fbbf24}\\text{skip}},\\; \\underbrace{DP[i\\!-\\!1][j\\!-\\!w_i] + v_i}_{\\color{#4ade80}\\text{take}}\\bigr)',
+        knapsackUnbounded: 's[w] = \\max_{\\text{item } j} \\bigl(\\underbrace{s[w - w_j] + v_j}_{\\color{#4ade80}\\text{use item } j}\\bigr)',
+        lcs: 'LCS[i][j] = \\begin{cases} \\color{#4ade80}{LCS[i\\!-\\!1][j\\!-\\!1] + 1} & \\text{if } X[i] = Y[j] \\\\ \\max(\\color{#fbbf24}{LCS[i\\!-\\!1][j]},\\; \\color{#fbbf24}{LCS[i][j\\!-\\!1]}) & \\text{otherwise} \\end{cases}',
+        lis: 'dp[i] = \\max\\bigl(1,\\; \\max_{j < i,\\, A[j] < A[i]} \\underbrace{dp[j] + 1}_{\\color{#4ade80}\\text{extend from } j}\\bigr)',
+        editDistance: 'ed[i][j] = \\begin{cases} \\color{#4ade80}{ed[i\\!-\\!1][j\\!-\\!1]} & \\text{if } X[i] = Y[j] \\\\ 1 + \\min(\\color{#fbbf24}{ed[i\\!-\\!1][j]}_{del},\\; \\color{#fbbf24}{ed[i][j\\!-\\!1]}_{ins},\\; \\color{#fbbf24}{ed[i\\!-\\!1][j\\!-\\!1]}_{rep}) & \\text{else} \\end{cases}'
+      };
+      var tmpl = templates[activeTab];
+      if (tmpl) {
+        renderKatex(tmpl, recurrenceBox);
+      } else {
+        recurrenceBox.innerHTML = '&mdash;';
+      }
       return;
     }
 
-    // Show the actual formula with color coding
-    var formula = evt.formula || '';
-
-    // Color-code: wrap "max(...)" parts, highlight the chosen path
-    // The formula from algo.js already has the computation — let's enhance it
     var decision = evt.decision || '';
-    var isSkip = decision.toLowerCase().indexOf('skip') >= 0 || decision.toLowerCase().indexOf('no item') >= 0;
+    var isBase = decision.toLowerCase().indexOf('base') >= 0;
     var isTake = decision.toLowerCase().indexOf('take') >= 0 || decision.toLowerCase().indexOf('use') >= 0;
     var isMatch = decision.toLowerCase().indexOf('match') >= 0;
-    var isBase = decision.toLowerCase().indexOf('base') >= 0;
 
-    var html = '<div style="margin-bottom:6px;">' + escapeHtml(formula) + '</div>';
+    // Build KaTeX for each algorithm type with actual values
+    var latex = '';
+    var r = evt.row, c = evt.col, v = evt.value;
+    var deps = evt.deps || [];
 
-    if (!isBase) {
-      if (isTake) {
-        html += '<span class="decision-badge take">&#10003; ' + escapeHtml(decision) + '</span>';
-      } else if (isSkip) {
-        html += '<span class="decision-badge skip">&#10007; ' + escapeHtml(decision) + '</span>';
-      } else if (isMatch) {
-        html += '<span class="decision-badge match">&#10003; ' + escapeHtml(decision) + '</span>';
+    if (activeTab === 'knapsack01') {
+      if (isBase) {
+        latex = 'DP[' + r + '][' + c + '] = 0 \\quad \\text{(base case)}';
+      } else if (deps.length === 1) {
+        // Only skip (item doesn't fit)
+        var d = deps[0];
+        latex = 'DP[' + r + '][' + c + '] = \\color{#fbbf24}{DP[' + d.row + '][' + d.col + ']} = ' + v;
+      } else if (deps.length === 2) {
+        var skipDep = deps[0], takeDep = deps[1];
+        var preset = AlgoVis.DP_PRESETS.knapsack01;
+        var item = preset.items[r - 1];
+        var skipVal = '?', takeVal = '?';
+        // Get values from the current cell states
+        if (cellStates[skipDep.row] && cellStates[skipDep.row][skipDep.col]) {
+          skipVal = cellStates[skipDep.row][skipDep.col].value;
+        }
+        if (cellStates[takeDep.row] && cellStates[takeDep.row][takeDep.col]) {
+          takeVal = cellStates[takeDep.row][takeDep.col].value;
+        }
+        var takeTotal = (takeVal !== '' && takeVal !== '?') ? (Number(takeVal) + item.v) : '?';
+
+        if (isTake) {
+          latex = 'DP[' + r + '][' + c + '] = \\max\\bigl(\\color{#fbbf24}{\\underbrace{' + skipVal + '}_{DP[' + skipDep.row + '][' + skipDep.col + ']\\;skip}},\\;'
+            + '\\color{#4ade80}{\\underbrace{' + takeVal + ' + ' + item.v + '}_{DP[' + takeDep.row + '][' + takeDep.col + '] + v_{' + item.name + '}\\;take}}\\bigr) = \\boxed{' + v + '}';
+        } else {
+          latex = 'DP[' + r + '][' + c + '] = \\max\\bigl(\\color{#4ade80}{\\underbrace{' + skipVal + '}_{DP[' + skipDep.row + '][' + skipDep.col + ']\\;skip}},\\;'
+            + '\\color{#fbbf24}{\\underbrace{' + takeVal + ' + ' + item.v + '}_{DP[' + takeDep.row + '][' + takeDep.col + '] + v_{' + item.name + '}\\;take}}\\bigr) = \\boxed{' + v + '}';
+        }
+      }
+    } else if (activeTab === 'knapsackUnbounded') {
+      if (isBase) {
+        latex = 's[' + c + '] = 0 \\quad \\text{(base case)}';
       } else {
-        html += '<span class="decision-badge nomatch">' + escapeHtml(decision) + '</span>';
+        // Show all item options
+        var parts = [];
+        var preset = AlgoVis.DP_PRESETS.knapsackUnbounded;
+        for (var di = 0; di < deps.length; di++) {
+          var dep = deps[di];
+          var depVal = (cellStates[dep.row] && cellStates[dep.row][dep.col]) ? cellStates[dep.row][dep.col].value : '?';
+          var itemIdx = -1;
+          for (var ii = 0; ii < preset.items.length; ii++) {
+            if (c - preset.items[ii].w === dep.col) { itemIdx = ii; break; }
+          }
+          var itemV = itemIdx >= 0 ? preset.items[itemIdx].v : '?';
+          parts.push(depVal + '+' + itemV);
+        }
+        latex = 's[' + c + '] = \\max(' + parts.join(',\\;') + ') = \\boxed{' + v + '}';
       }
+    } else if (activeTab === 'lcs') {
+      if (isBase) {
+        latex = 'LCS[' + r + '][' + c + '] = 0 \\quad \\text{(base case)}';
+      } else if (isMatch) {
+        var dd = deps[0];
+        var ddVal = (cellStates[dd.row] && cellStates[dd.row][dd.col]) ? cellStates[dd.row][dd.col].value : '?';
+        var preset = AlgoVis.DP_PRESETS.lcs;
+        latex = '\\text{' + preset.X[r - 1] + ' = ' + preset.Y[c - 1] + '} \\implies LCS[' + r + '][' + c + '] = \\color{#4ade80}{LCS[' + dd.row + '][' + dd.col + '] + 1} = \\color{#4ade80}{' + ddVal + '+1} = \\boxed{' + v + '}';
+      } else {
+        var upDep = deps[0], leftDep = deps[1];
+        var upVal = (cellStates[upDep.row] && cellStates[upDep.row][upDep.col]) ? cellStates[upDep.row][upDep.col].value : '?';
+        var leftVal = (cellStates[leftDep.row] && cellStates[leftDep.row][leftDep.col]) ? cellStates[leftDep.row][leftDep.col].value : '?';
+        var preset = AlgoVis.DP_PRESETS.lcs;
+        latex = '\\text{' + preset.X[r - 1] + ' \\neq ' + preset.Y[c - 1] + '} \\implies LCS[' + r + '][' + c + '] = \\max(\\color{#fbbf24}{' + upVal + '},\\;\\color{#fbbf24}{' + leftVal + '}) = \\boxed{' + v + '}';
+      }
+    } else if (activeTab === 'lis') {
+      if (isBase) {
+        latex = 'dp[' + (c + 1) + '] = 1 \\quad \\text{(base case)}';
+      } else if (deps.length === 0) {
+        latex = 'dp[' + (c + 1) + '] = 1 \\quad \\text{(no valid j found)}';
+      } else {
+        var preset = AlgoVis.DP_PRESETS.lis;
+        var bestJ = -1, bestVal = 0;
+        for (var di = 0; di < deps.length; di++) {
+          var dep = deps[di];
+          var dv = (cellStates[dep.row] && cellStates[dep.row][dep.col]) ? Number(cellStates[dep.row][dep.col].value) : 0;
+          if (dv + 1 >= v) { bestJ = dep.col; bestVal = dv; }
+        }
+        if (bestJ >= 0) {
+          latex = 'dp[' + (c + 1) + '] = \\color{#4ade80}{dp[' + (bestJ + 1) + '] + 1} = \\color{#4ade80}{' + bestVal + '+1} = \\boxed{' + v + '}';
+          latex += '\\quad A[' + (bestJ + 1) + ']\\!=\\!' + preset.A[bestJ] + ' < ' + preset.A[c] + '\\!=\\!A[' + (c + 1) + ']';
+        } else {
+          latex = 'dp[' + (c + 1) + '] = \\boxed{' + v + '}';
+        }
+      }
+    } else if (activeTab === 'editDistance') {
+      if (isBase) {
+        latex = 'ed[' + r + '][' + c + '] = ' + v + ' \\quad \\text{(base case)}';
+      } else if (isMatch) {
+        var dd = deps[0];
+        var ddVal = (cellStates[dd.row] && cellStates[dd.row][dd.col]) ? cellStates[dd.row][dd.col].value : '?';
+        var preset = AlgoVis.DP_PRESETS.editDistance;
+        latex = '\\text{' + preset.X[r - 1] + ' = ' + preset.Y[c - 1] + '} \\implies ed[' + r + '][' + c + '] = \\color{#4ade80}{ed[' + dd.row + '][' + dd.col + ']} = \\boxed{' + v + '}';
+      } else {
+        var preset = AlgoVis.DP_PRESETS.editDistance;
+        // deps: [delete=i-1,j], [insert=i,j-1], [replace=i-1,j-1]
+        var vals = [];
+        var labels = ['del', 'ins', 'rep'];
+        for (var di = 0; di < deps.length; di++) {
+          var dep = deps[di];
+          var dv = (cellStates[dep.row] && cellStates[dep.row][dep.col]) ? cellStates[dep.row][dep.col].value : '?';
+          vals.push(dv);
+        }
+        latex = '\\text{' + preset.X[r - 1] + ' \\neq ' + preset.Y[c - 1] + '} \\implies ed[' + r + '][' + c + '] = 1 + \\min(';
+        var minParts = [];
+        for (var di = 0; di < vals.length; di++) {
+          minParts.push('\\color{#fbbf24}{\\underbrace{' + vals[di] + '}_{' + labels[di] + '}}');
+        }
+        latex += minParts.join(',\\;') + ') = \\boxed{' + v + '}';
+      }
+    }
+
+    // Render
+    if (latex) {
+      renderKatex(latex, recurrenceBox);
     } else {
-      html += '<span style="color:#888;font-size:0.82rem;">' + escapeHtml(decision) + '</span>';
+      recurrenceBox.innerHTML = escapeHtml(evt.formula || '');
     }
 
-    // Show which yellow cells correspond to what
-    if (evt.deps && evt.deps.length > 0) {
-      html += '<div style="margin-top:8px;font-size:0.78rem;color:#888;">';
-      html += '<span class="yellow" style="color:#fbbf24;">Yellow cells</span> checked: ';
+    // Decision badge below
+    var badgeHtml = '';
+    if (!isBase) {
+      var badgeClass = isTake || isMatch ? 'take' : 'skip';
+      var badgeIcon = isTake || isMatch ? '&#10003;' : '&#10007;';
+      badgeHtml = '<div style="margin-top:8px;"><span class="decision-badge ' + badgeClass + '">' + badgeIcon + ' ' + escapeHtml(decision) + '</span></div>';
+    }
+
+    // Dep cells note
+    if (deps.length > 0) {
+      badgeHtml += '<div style="margin-top:6px;font-size:0.78rem;color:#888;">';
+      badgeHtml += '<span style="color:#fbbf24;">Yellow cells</span>: ';
       var depStrs = [];
-      for (var i = 0; i < evt.deps.length; i++) {
-        depStrs.push('[' + evt.deps[i].row + '][' + evt.deps[i].col + ']');
+      for (var i = 0; i < deps.length; i++) {
+        depStrs.push('[' + deps[i].row + '][' + deps[i].col + ']');
       }
-      html += depStrs.join(', ');
-      html += '</div>';
+      badgeHtml += depStrs.join(', ');
+      badgeHtml += '</div>';
     }
 
-    recurrenceBox.innerHTML = html;
+    if (badgeHtml) {
+      var extra = document.createElement('div');
+      extra.innerHTML = badgeHtml;
+      recurrenceBox.appendChild(extra);
+    }
   }
 
   // ---- Step info ----
