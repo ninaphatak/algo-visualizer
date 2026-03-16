@@ -193,8 +193,8 @@ AlgoVis.renderGraph = function (canvas, config) {
     // Position arrow tip just outside the target circle
     var tipX = b.x - (dx / len) * (radius + 4);
     var tipY = b.y - (dy / len) * (radius + 4);
-    var arrowLen = 18;
-    var arrowAngle = Math.PI / 5;
+    var arrowLen = 12;
+    var arrowAngle = Math.PI / 6;
 
     var arrowColor = style.color === '#2a2a4a' ? '#aaa' : style.color;
 
