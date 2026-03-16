@@ -51,15 +51,25 @@
     return v === INF ? '\u221e' : String(v);
   }
 
-  function buildGraphConfig(preset, activeK) {
+  // Build graph config with optional path highlighting for update events
+  // evt can be null (just show graph) or an update event (show i→k→j vs i→j)
+  function buildGraphConfig(preset, activeK, evt) {
+    var n = preset.n;
     var vertices = [];
-    for (var i = 0; i < preset.n; i++) {
+    for (var i = 0; i < n; i++) {
+      var state = 'default';
+      if (i === activeK) state = 'active';
+      // On update events, highlight i and j vertices
+      if (evt && evt.type === 'update') {
+        if (i === evt.i || i === evt.j) state = 'finalized'; // green = endpoints
+        if (i === evt.k) state = 'active'; // blue = intermediate
+      }
       vertices.push({
         id: i,
         label: preset.labels[i],
         x: preset.positions[i].x,
         y: preset.positions[i].y,
-        state: (i === activeK) ? 'active' : 'default'
+        state: state
       });
     }
 
@@ -68,7 +78,35 @@
       edges.push({ u: e[0], v: e[1], w: e[2], state: 'default' });
     });
 
-    return { vertices: vertices, edges: edges };
+    // On update events, add overlay edges showing the paths being compared
+    if (evt && evt.type === 'update') {
+      var matrix = evt.matrix;
+      var ii = evt.i, jj = evt.j, kk = evt.k;
+
+      // Direct path i→j (yellow = what we currently have)
+      if (evt.oldVal !== INF) {
+        edges.push({ u: ii, v: jj, w: evt.oldVal, state: 'relaxing' });
+      }
+
+      // Path through k: i→k (blue) and k→j (blue)
+      var dik = matrix[ii] ? matrix[ii][kk] : INF;
+      var dkj = matrix[kk] ? matrix[kk][jj] : INF;
+      // Use the values from before this update for i→k and k→j
+      if (dik !== INF) {
+        edges.push({ u: ii, v: kk, w: dik, state: 'considering' });
+      }
+      if (dkj !== INF) {
+        edges.push({ u: kk, v: jj, w: dkj, state: 'considering' });
+      }
+    }
+
+    // Distance labels from current matrix if available
+    var distLabels = {};
+    if (evt && evt.type === 'done' && evt.matrix) {
+      // On done, don't show per-vertex labels (it's all-pairs, not single-source)
+    }
+
+    return { vertices: vertices, edges: edges, distLabels: distLabels };
   }
 
   function renderMatrix(matrix, currentI, currentJ, k) {
@@ -157,7 +195,7 @@
           '<div class="relax-detail ' + resultClass + '">' + resultText + '</div>';
 
         renderMatrix(evt.matrix, evt.i, evt.j, evt.k);
-        AlgoVis.renderGraph(graphCanvas, buildGraphConfig(currentPreset, evt.k));
+        AlgoVis.renderGraph(graphCanvas, buildGraphConfig(currentPreset, evt.k, evt));
         highlightPseudoLine(6);
         break;
 
