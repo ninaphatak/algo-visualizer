@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimum Spanning Tree — CS 141 Visualizer</title>
+  <link rel="stylesheet" href="../shared/style.css">
+  <style>
+    /* Edge list for Kruskal */
+    .edge-list { display: flex; flex-direction: column; gap: 4px; }
+    .edge-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 10px; background: #12122a; border: 1px solid #1a1a3a;
+      border-radius: 6px; font-size: 0.82rem; transition: all 0.2s;
+    }
+    .edge-item.accepted { border-color: #4ade80; color: #4ade80; background: rgba(74,222,128,0.08); }
+    .edge-item.rejected { border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.08); }
+    .edge-item.considering { border-color: #60a5fa; color: #60a5fa; background: rgba(96,165,250,0.1); }
+    .edge-item.pending { color: #555; }
+
+    /* MST weight display */
+    .mst-weight-display {
+      display: flex; align-items: baseline; gap: 8px; margin-top: 4px;
+    }
+    .mst-weight-display .value {
+      font-size: 1.8rem; font-weight: 700; color: #4ade80;
+    }
+    .mst-weight-display .label {
+      font-size: 0.8rem; color: #888;
+    }
+
+    /* Prim note */
+    .prim-note {
+      background: #1a2a1a; border: 1px solid #4ade80; border-radius: 8px;
+      padding: 10px 14px; font-size: 0.82rem; color: #4ade80; margin-top: 8px;
+    }
+    .prim-note strong { color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <a href="../index.html" class="back-btn">&#8592; Back</a>
+  <h1>Minimum Spanning Tree</h1>
+  <span class="tag greedy">Greedy</span>
+</div>
+
+<!-- Main Grid -->
+<div class="main">
+  <!-- Graph Area (left) -->
+  <div class="graph-area">
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn" id="backBtn" disabled>&#9664; Back</button>
+      <button class="btn primary" id="stepBtn">Step &#9654;</button>
+      <button class="btn" id="autoBtn">Play</button>
+      <button class="btn danger" id="resetBtn">Reset</button>
+      <div class="speed-control">
+        <label>Speed</label>
+        <input type="range" id="speedSlider" min="100" max="1000" value="500" step="50">
+        <span id="speedLabel">500ms</span>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="graphCanvas"></canvas>
+
+    <!-- Legend & Stats -->
+    <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap; padding-top:8px;">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> In MST</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Considering</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#555"></div> Unvisited</div>
+        <div class="legend-item"><div class="legend-line" style="background:#4ade80"></div> MST Edge</div>
+        <div class="legend-item"><div class="legend-line" style="background:#60a5fa"></div> Current</div>
+        <div class="legend-item"><div class="legend-line" style="background:#f87171"></div> Rejected</div>
+      </div>
+      <div class="mst-weight-display">
+        <div><div class="value" id="mstWeight">0</div><div class="label">MST Weight</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar (right) -->
+  <div class="sidebar">
+    <!-- Presets -->
+    <div class="sidebar-section">
+      <h3>Graph Presets</h3>
+      <div class="preset-btns" id="presetBtns"></div>
+    </div>
+
+    <!-- Algorithm Toggle -->
+    <div class="sidebar-section">
+      <h3>Algorithm</h3>
+      <div class="tabs" id="algoTabs">
+        <button class="tab active" data-algo="kruskal">Kruskal</button>
+        <button class="tab" data-algo="prim">Prim</button>
+      </div>
+    </div>
+
+    <!-- Step Info -->
+    <div class="sidebar-section">
+      <h3>Current Step</h3>
+      <div class="step-info" id="stepInfo"></div>
+    </div>
+
+    <!-- Kruskal: Sorted Edge List -->
+    <div class="sidebar-section" id="kruskalPanel">
+      <h3>Sorted Edges</h3>
+      <div class="edge-list" id="edgeList"></div>
+    </div>
+
+    <!-- Prim: Key Table & PQ -->
+    <div class="sidebar-section" id="primKeyPanel" style="display:none;">
+      <h3>Key Table</h3>
+      <table class="dist-table" id="keyTable">
+        <thead>
+          <tr><th>Vertex</th><th>Key</th><th>Parent</th><th>Status</th></tr>
+        </thead>
+        <tbody id="keyBody"></tbody>
+      </table>
+      <div class="prim-note">
+        <strong>Prim vs Dijkstra:</strong> Relaxation uses <code>w(u,v) &lt; key[v]</code>,
+        NOT <code>key[u] + w(u,v)</code>. The key stores just the edge weight, not path cost.
+      </div>
+    </div>
+
+    <div class="sidebar-section" id="primPQPanel" style="display:none;">
+      <h3>Priority Queue (Min-Heap)</h3>
+      <div class="pq-items" id="pqDisplay"></div>
+    </div>
+
+    <!-- Pseudocode -->
+    <div class="sidebar-section">
+      <h3>Pseudocode</h3>
+      <div class="pseudocode" id="pseudocode">
+        <!-- Kruskal pseudocode (default) -->
+        <div id="kruskalCode">
+          <div class="line" data-line="0">Kruskal(G):</div>
+          <div class="line" data-line="1">  sort edges by weight</div>
+          <div class="line" data-line="2">  T = {}</div>
+          <div class="line" data-line="3">  for each v: makeSet(v)</div>
+          <div class="line" data-line="4">  for (u,v,w) in sorted edges:</div>
+          <div class="line" data-line="5">    if findSet(u) != findSet(v):</div>
+          <div class="line" data-line="6">      T = T + {(u,v,w)}</div>
+          <div class="line" data-line="7">      union(u, v)</div>
+          <div class="line" data-line="8">  return T</div>
+        </div>
+        <!-- Prim pseudocode (hidden initially) -->
+        <div id="primCode" style="display:none;">
+          <div class="line" data-line="0">Prim(G, s):</div>
+          <div class="line" data-line="1">  for each v: key[v] = INF</div>
+          <div class="line" data-line="2">  key[s] = 0</div>
+          <div class="line" data-line="3">  PQ = all vertices</div>
+          <div class="line" data-line="4">  while PQ not empty:</div>
+          <div class="line" data-line="5">    u = extractMin(PQ)</div>
+          <div class="line" data-line="6">    for each neighbor v of u:</div>
+          <div class="line" data-line="7">      if w(u,v) &lt; key[v]:</div>
+          <div class="line" data-line="8">        key[v] = w(u,v)</div>
+          <div class="line" data-line="9">        parent[v] = u</div>
+          <div class="line" data-line="10">  return MST from parent[]</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts (order matters) -->
+<script src="../shared/graph-presets.js"></script>
+<script src="../shared/graph-renderer.js"></script>
+<script src="../shared/controls.js"></script>
+<script src="algo-kruskal.js"></script>
+<script src="algo-prim.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
