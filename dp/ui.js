@@ -1,23 +1,126 @@
 /* ============================================
-   CS 141 Algorithm Visualizer — DP UI Controller
+   CS 141 — DP Explorer UI
+   Problem statements, input display, live recurrence, dependency highlighting
    ============================================ */
 
 (function () {
+  'use strict';
+
   var activeTab = 'knapsack01';
   var player = null;
   var events = [];
   var rowLabels = [];
   var colLabels = [];
-  var cellStates = [];   // cellStates[r][c] = { value, state }
-  var filledSet = {};     // track which cells have been filled
+  var cellStates = [];
+  var filledSet = {};
 
   var tableContainer = document.getElementById('tableContainer');
-  var formulaBar     = document.getElementById('formulaBar');
-  var stepInfo       = document.getElementById('stepInfo');
-  var decisionInfo   = document.getElementById('decisionInfo');
-  var pseudocodeEl   = document.getElementById('pseudocode');
+  var problemBox = document.getElementById('problemBox');
+  var inputDisplay = document.getElementById('inputDisplay');
+  var recurrenceBox = document.getElementById('recurrenceBox');
+  var stepInfo = document.getElementById('stepInfo');
+  var pseudocodeEl = document.getElementById('pseudocode');
 
-  // Pseudocode definitions
+  // ---- Problem statements ----
+  var PROBLEMS = {
+    knapsack01: {
+      title: '0/1 Knapsack',
+      desc: function (p) {
+        return 'Given <strong>' + p.items.length + ' items</strong> each with a weight and value, ' +
+          'find the subset with <strong>maximum total value</strong> that fits in a knapsack of capacity <strong>W=' + p.W + '</strong>. ' +
+          'Each item can be used <strong>at most once</strong>.';
+      },
+      input: function (p) {
+        var html = '<table class="items-table"><thead><tr><th>Item</th><th>Weight</th><th>Value</th></tr></thead><tbody>';
+        p.items.forEach(function (item) {
+          html += '<tr><td>' + item.name + '</td><td>' + item.w + '</td><td>' + item.v + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        html += '<div style="margin-top:6px;color:#888;font-size:0.8rem;">Capacity W = ' + p.W + '</div>';
+        return html;
+      },
+      state: 'DP[i][j] = max value using items 1..i with capacity j',
+      recurrenceTemplate: 'DP[i][j] = max(<span class="skip-val">DP[i-1][j]</span>, <span class="take-val">DP[i-1][j-w<sub>i</sub>] + v<sub>i</sub></span>)',
+      note: 'Uses DP[<strong>i-1</strong>] (previous row) &mdash; each item at most once.'
+    },
+    knapsackUnbounded: {
+      title: 'Unbounded Knapsack',
+      desc: function (p) {
+        return 'Given <strong>' + p.items.length + ' item types</strong>, find the combination with <strong>maximum total value</strong> ' +
+          'that fits in capacity <strong>W=' + p.W + '</strong>. Each item can be used <strong>unlimited times</strong>.';
+      },
+      input: function (p) {
+        var html = '<table class="items-table"><thead><tr><th>Item</th><th>Weight</th><th>Value</th></tr></thead><tbody>';
+        p.items.forEach(function (item) {
+          html += '<tr><td>' + item.name + '</td><td>' + item.w + '</td><td>' + item.v + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        html += '<div style="margin-top:6px;color:#888;font-size:0.8rem;">Capacity W = ' + p.W + '</div>';
+        return html;
+      },
+      state: 's[w] = max value with capacity w (items reusable)',
+      recurrenceTemplate: 's[w] = max over all items j: <span class="take-val">s[w-w<sub>j</sub>] + v<sub>j</sub></span>',
+      note: 'Uses s[w-w<sub>j</sub>] (<strong>same</strong> array) &mdash; items reusable.'
+    },
+    lcs: {
+      title: 'Longest Common Subsequence',
+      desc: function (p) {
+        return 'Find the <strong>longest subsequence</strong> common to both strings ' +
+          '<strong>"' + p.X + '"</strong> and <strong>"' + p.Y + '"</strong>.';
+      },
+      input: function (p) {
+        return '<div class="input-display">' +
+          '<div style="margin-bottom:4px;color:#888;">X:</div>' + charBoxes(p.X) +
+          '<div style="margin-top:8px;margin-bottom:4px;color:#888;">Y:</div>' + charBoxes(p.Y) +
+          '</div>';
+      },
+      state: 'LCS[i][j] = LCS length of X[1..i] and Y[1..j]',
+      recurrenceTemplate: 'If X[i]=Y[j]: <span class="take-val">LCS[i-1][j-1] + 1</span><br>Else: max(<span class="skip-val">LCS[i-1][j]</span>, <span class="skip-val">LCS[i][j-1]</span>)',
+      note: 'Match &rarr; diagonal +1. No match &rarr; best of skip X[i] or skip Y[j].'
+    },
+    lis: {
+      title: 'Longest Increasing Subsequence',
+      desc: function (p) {
+        return 'Find the <strong>longest subsequence</strong> of the sequence where each element is <strong>strictly greater</strong> than the previous.';
+      },
+      input: function (p) {
+        return '<div class="input-display">' +
+          '<div style="margin-bottom:4px;color:#888;">Sequence A:</div>' +
+          charBoxes(p.A.join(','), p.A) +
+          '</div>';
+      },
+      state: 'dp[i] = LIS length ending at position i',
+      recurrenceTemplate: 'dp[i] = max(1, max<sub>j&lt;i, A[j]&lt;A[i]</sub> <span class="take-val">dp[j] + 1</span>)',
+      note: 'For each i, check all previous j where A[j] &lt; A[i] as potential "second-to-last" element.'
+    },
+    editDistance: {
+      title: 'Edit Distance',
+      desc: function (p) {
+        return 'Find the <strong>minimum number of operations</strong> (insert, delete, replace) to transform ' +
+          '<strong>"' + p.X + '"</strong> into <strong>"' + p.Y + '"</strong>.';
+      },
+      input: function (p) {
+        return '<div class="input-display">' +
+          '<div style="margin-bottom:4px;color:#888;">Source X:</div>' + charBoxes(p.X) +
+          '<div style="margin-top:8px;margin-bottom:4px;color:#888;">Target Y:</div>' + charBoxes(p.Y) +
+          '</div>';
+      },
+      state: 'ed[i][j] = min edits to transform X[1..i] into Y[1..j]',
+      recurrenceTemplate: 'If X[i]=Y[j]: <span class="take-val">ed[i-1][j-1]</span> (free)<br>Else: 1 + min(<span class="skip-val">ed[i-1][j]</span><sub>del</sub>, <span class="skip-val">ed[i][j-1]</span><sub>ins</sub>, <span class="skip-val">ed[i-1][j-1]</span><sub>rep</sub>)',
+      note: 'Match &rarr; free. Otherwise cheapest of delete, insert, or replace.'
+    }
+  };
+
+  function charBoxes(str, arr) {
+    var items = arr || str.split('');
+    var html = '';
+    for (var i = 0; i < items.length; i++) {
+      html += '<span class="char-box">' + items[i] + '</span>';
+    }
+    return html;
+  }
+
+  // ---- Pseudocode ----
   var PSEUDOCODES = {
     knapsack01: [
       'Knapsack-01(items, W):',
@@ -28,7 +131,6 @@
       '      if j >= w[i]:',
       '        DP[i][j] = max(DP[i][j],',
       '          DP[i-1][j-w[i]] + v[i])    // take',
-      '  // Uses DP[i-1]: each item at most once',
       '  return DP[n][W]'
     ],
     knapsackUnbounded: [
@@ -38,7 +140,6 @@
       '    for each item (wj, vj):',
       '      if w >= wj:',
       '        s[w] = max(s[w], s[w-wj]+vj)',
-      '  // Uses s[w-wj]: items are reusable',
       '  return s[W]'
     ],
     lcs: [
@@ -88,9 +189,28 @@
   }
 
   function escapeHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // ---- Problem & input display ----
+  function showProblem(algo) {
+    var preset = AlgoVis.DP_PRESETS[algo];
+    var prob = PROBLEMS[algo];
+
+    // Problem box
+    problemBox.innerHTML = '<div class="problem-title">' + prob.title + '</div>' +
+      prob.desc(preset) +
+      '<div style="margin-top:8px;color:#888;font-size:0.82rem;"><strong>State:</strong> ' + prob.state + '</div>' +
+      '<div style="margin-top:4px;font-size:0.82rem;">' + prob.note + '</div>';
+
+    // Input display
+    inputDisplay.innerHTML = prob.input(preset);
+
+    // Recurrence template
+    recurrenceBox.innerHTML = prob.recurrenceTemplate;
+  }
+
+  // ---- Table state management ----
   function initCellStates(rows, cols) {
     rowLabels = rows;
     colLabels = cols;
@@ -104,22 +224,32 @@
     }
   }
 
-  function cellKey(r, c) {
-    return r + ',' + c;
-  }
+  function cellKey(r, c) { return r + ',' + c; }
 
-  function renderCurrentState(evt) {
-    // Build cells with current states — reset highlights first
+  // Rebuild cell states by replaying events 0..index (supports step-back)
+  function rebuildState(index) {
+    // Reset
     for (var r = 0; r < rowLabels.length; r++) {
       for (var c = 0; c < colLabels.length; c++) {
-        if (cellStates[r][c].state === 'computing' || cellStates[r][c].state === 'dependency') {
-          cellStates[r][c].state = filledSet[cellKey(r, c)] ? 'filled' : 'empty';
-        }
+        cellStates[r][c] = { value: '', state: 'empty' };
+      }
+    }
+    filledSet = {};
+
+    // Replay all fill-cell events up to index
+    for (var i = 0; i <= index; i++) {
+      var ev = events[i];
+      if (ev.type === 'fill-cell') {
+        cellStates[ev.row][ev.col].value = ev.value;
+        cellStates[ev.row][ev.col].state = 'filled';
+        filledSet[cellKey(ev.row, ev.col)] = true;
       }
     }
 
+    // Now apply highlighting for the current event
+    var evt = events[index];
     if (evt && evt.type === 'fill-cell') {
-      // Mark dependencies
+      // Mark dependencies FIRST (yellow)
       if (evt.deps) {
         for (var d = 0; d < evt.deps.length; d++) {
           var dep = evt.deps[d];
@@ -128,13 +258,12 @@
           }
         }
       }
-
-      // Mark current cell
-      cellStates[evt.row][evt.col].value = evt.value;
+      // Mark current cell (blue) — overwrites if it was also a dep
       cellStates[evt.row][evt.col].state = 'computing';
-      filledSet[cellKey(evt.row, evt.col)] = true;
     }
+  }
 
+  function renderTable() {
     AlgoVis.renderTable(tableContainer, {
       rows: rowLabels,
       cols: colLabels,
@@ -143,39 +272,103 @@
     });
   }
 
-  function onEvent(evt, index) {
-    if (evt.type === 'init') {
-      initCellStates(evt.rows, evt.cols);
-      renderCurrentState(null);
-      formulaBar.textContent = '—';
-      stepInfo.textContent = 'Step ' + index + ': Initialized table (' + evt.rows.length + ' rows x ' + evt.cols.length + ' cols)';
-      decisionInfo.textContent = '—';
-    } else if (evt.type === 'fill-cell') {
-      renderCurrentState(evt);
-      formulaBar.textContent = evt.formula || '—';
-      stepInfo.innerHTML = '<span class="step-title">Step ' + index + '</span><br>Filling cell [' + evt.row + '][' + evt.col + '] = <span class="highlight">' + evt.value + '</span>';
-      decisionInfo.textContent = evt.decision || '—';
-    } else if (evt.type === 'done') {
-      // Clear highlights, show all filled
-      for (var r = 0; r < rowLabels.length; r++) {
-        for (var c = 0; c < colLabels.length; c++) {
-          if (filledSet[cellKey(r, c)]) {
-            cellStates[r][c].state = 'filled';
-          }
-        }
+  // ---- Live recurrence with actual values ----
+  function showLiveRecurrence(evt) {
+    if (!evt || evt.type !== 'fill-cell') {
+      var prob = PROBLEMS[activeTab];
+      recurrenceBox.innerHTML = prob ? prob.recurrenceTemplate : '&mdash;';
+      return;
+    }
+
+    // Show the actual formula with color coding
+    var formula = evt.formula || '';
+
+    // Color-code: wrap "max(...)" parts, highlight the chosen path
+    // The formula from algo.js already has the computation — let's enhance it
+    var decision = evt.decision || '';
+    var isSkip = decision.toLowerCase().indexOf('skip') >= 0 || decision.toLowerCase().indexOf('no item') >= 0;
+    var isTake = decision.toLowerCase().indexOf('take') >= 0 || decision.toLowerCase().indexOf('use') >= 0;
+    var isMatch = decision.toLowerCase().indexOf('match') >= 0;
+    var isBase = decision.toLowerCase().indexOf('base') >= 0;
+
+    var html = '<div style="margin-bottom:6px;">' + escapeHtml(formula) + '</div>';
+
+    if (!isBase) {
+      if (isTake) {
+        html += '<span class="decision-badge take">&#10003; ' + escapeHtml(decision) + '</span>';
+      } else if (isSkip) {
+        html += '<span class="decision-badge skip">&#10007; ' + escapeHtml(decision) + '</span>';
+      } else if (isMatch) {
+        html += '<span class="decision-badge match">&#10003; ' + escapeHtml(decision) + '</span>';
+      } else {
+        html += '<span class="decision-badge nomatch">' + escapeHtml(decision) + '</span>';
       }
-      AlgoVis.renderTable(tableContainer, {
-        rows: rowLabels,
-        cols: colLabels,
-        cells: cellStates,
-        formula: ''
-      });
-      formulaBar.textContent = 'Answer: ' + evt.answer;
-      stepInfo.innerHTML = '<span class="step-title">Done!</span><br>Optimal value = <span class="highlight">' + evt.answer + '</span>';
-      decisionInfo.textContent = 'Algorithm complete.';
+    } else {
+      html += '<span style="color:#888;font-size:0.82rem;">' + escapeHtml(decision) + '</span>';
+    }
+
+    // Show which yellow cells correspond to what
+    if (evt.deps && evt.deps.length > 0) {
+      html += '<div style="margin-top:8px;font-size:0.78rem;color:#888;">';
+      html += '<span class="yellow" style="color:#fbbf24;">Yellow cells</span> checked: ';
+      var depStrs = [];
+      for (var i = 0; i < evt.deps.length; i++) {
+        depStrs.push('[' + evt.deps[i].row + '][' + evt.deps[i].col + ']');
+      }
+      html += depStrs.join(', ');
+      html += '</div>';
+    }
+
+    recurrenceBox.innerHTML = html;
+  }
+
+  // ---- Step info ----
+  function showStepInfo(evt, index) {
+    if (!evt) return;
+
+    if (evt.type === 'init') {
+      stepInfo.innerHTML = '<div class="step-title">Table Initialized</div>' +
+        'DP table created (' + rowLabels.length + ' rows &times; ' + colLabels.length + ' cols).<br>' +
+        'Base cases will be filled first.';
+    } else if (evt.type === 'fill-cell') {
+      stepInfo.innerHTML = '<div class="step-title">Filling [' + evt.row + '][' + evt.col + '] = ' + evt.value + '</div>' +
+        'Step ' + index + ' of ' + (events.length - 1);
+    } else if (evt.type === 'done') {
+      stepInfo.innerHTML = '<div class="step-title">Done!</div>' +
+        'Optimal answer: <span class="highlight">' + evt.answer + '</span>';
     }
   }
 
+  // ---- Highlight item being considered (for knapsack) ----
+  function highlightCurrentItem(evt) {
+    if (activeTab !== 'knapsack01' && activeTab !== 'knapsackUnbounded') return;
+    var rows = document.querySelectorAll('#inputDisplay .items-table tbody tr');
+    rows.forEach(function (tr) { tr.classList.remove('item-highlight'); });
+
+    if (evt && evt.type === 'fill-cell' && evt.decision) {
+      var preset = AlgoVis.DP_PRESETS[activeTab];
+      for (var i = 0; i < preset.items.length; i++) {
+        if (evt.decision.indexOf(preset.items[i].name) >= 0) {
+          if (rows[i]) rows[i].classList.add('item-highlight');
+        }
+      }
+    }
+  }
+
+  // ---- Main event handler ----
+  function onEvent(evt, index) {
+    if (evt.type === 'init') {
+      initCellStates(evt.rows, evt.cols);
+    }
+
+    rebuildState(index);
+    renderTable();
+    showLiveRecurrence(evt);
+    showStepInfo(evt, index);
+    highlightCurrentItem(evt);
+  }
+
+  // ---- Run algorithm ----
   function runAlgorithm(algo) {
     var presets = AlgoVis.DP_PRESETS;
     var preset = presets[algo];
@@ -198,26 +391,24 @@
         break;
     }
 
+    showProblem(algo);
     setPseudocode(algo);
 
-    // Create new player (re-binds buttons)
+    if (player) player.pause();
     player = AlgoVis.createPlayer(events, onEvent);
   }
 
-  // Tab switching
+  // ---- Tab switching ----
   var tabs = document.querySelectorAll('#algoTabs .tab');
   for (var i = 0; i < tabs.length; i++) {
     tabs[i].addEventListener('click', function () {
-      // Remove active from all
-      for (var j = 0; j < tabs.length; j++) {
-        tabs[j].classList.remove('active');
-      }
+      for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
       this.classList.add('active');
       activeTab = this.getAttribute('data-algo');
       runAlgorithm(activeTab);
     });
   }
 
-  // Initial load
+  // ---- Init ----
   runAlgorithm(activeTab);
 })();

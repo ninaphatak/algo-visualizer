@@ -5,6 +5,110 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dynamic Programming Explorer — CS 141 Visualizer</title>
   <link rel="stylesheet" href="../shared/style.css">
+  <style>
+    /* Problem statement */
+    .problem-box {
+      background: #12122a;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .problem-box .problem-title {
+      color: #a78bfa;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 6px;
+    }
+    /* Items table */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 8px;
+    }
+    .items-table th {
+      text-align: left;
+      padding: 4px 8px;
+      color: #888;
+      font-weight: 600;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    .items-table td {
+      padding: 4px 8px;
+      border-bottom: 1px solid #1a1a3a;
+    }
+    .items-table .item-highlight {
+      background: #1e3a5f;
+      color: #60a5fa;
+      font-weight: 600;
+    }
+    /* Input display for strings/sequences */
+    .input-display {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      line-height: 1.8;
+    }
+    .input-display .char-box {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      text-align: center;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      margin: 1px;
+      background: #1a1a3a;
+    }
+    .input-display .char-box.active {
+      background: #1e3a5f;
+      border-color: #60a5fa;
+      color: #60a5fa;
+    }
+    .input-display .idx {
+      font-size: 0.65rem;
+      color: #555;
+    }
+    /* Recurrence display */
+    .recurrence-box {
+      background: #0e0e24;
+      border: 1px solid #1a1a3a;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+    }
+    .recurrence-box .skip-val { color: #fbbf24; }
+    .recurrence-box .take-val { color: #4ade80; }
+    .recurrence-box .result { color: #60a5fa; font-weight: 700; }
+    .recurrence-box .chosen {
+      border-bottom: 2px solid #4ade80;
+      padding-bottom: 1px;
+    }
+    /* Decision badge */
+    .decision-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .decision-badge.skip { background: #2a2a1a; color: #fbbf24; }
+    .decision-badge.take { background: #1a2a1a; color: #4ade80; }
+    .decision-badge.match { background: #1a2a1a; color: #4ade80; }
+    .decision-badge.nomatch { background: #2a2a1a; color: #fbbf24; }
+    /* Legend note about colors */
+    .dep-legend {
+      font-size: 0.78rem;
+      color: #888;
+      margin-top: 6px;
+    }
+    .dep-legend span.yellow { color: #fbbf24; font-weight: 600; }
+    .dep-legend span.blue { color: #60a5fa; font-weight: 600; }
+  </style>
 </head>
 <body>
 
@@ -22,10 +126,10 @@
     <!-- Tabs -->
     <div class="tabs" id="algoTabs">
       <button class="tab active" data-algo="knapsack01">0/1 Knapsack</button>
-      <button class="tab" data-algo="knapsackUnbounded">Unbounded Knapsack</button>
+      <button class="tab" data-algo="knapsackUnbounded">Unbounded</button>
       <button class="tab" data-algo="lcs">LCS</button>
       <button class="tab" data-algo="lis">LIS</button>
-      <button class="tab" data-algo="editDistance">Edit Distance</button>
+      <button class="tab" data-algo="editDistance">Edit Dist</button>
     </div>
 
     <!-- Controls -->
@@ -48,31 +152,41 @@
     <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap; padding-top:8px;">
       <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Computing</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> Dependency</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> Dependency (backtrack)</div>
         <div class="legend-item"><div class="legend-dot" style="background:#e0e0e0"></div> Filled</div>
         <div class="legend-item"><div class="legend-dot" style="background:#555"></div> Empty</div>
       </div>
     </div>
+    <div class="dep-legend">
+      <span class="yellow">Yellow cells</span> = the cells the recurrence looks back at.
+      <span class="blue">Blue cell</span> = the cell being computed now.
+    </div>
   </div>
 
-  <!-- Sidebar (right) -->
+  <!-- Sidebar -->
   <div class="sidebar">
-    <!-- Step Info -->
+    <!-- Problem Statement -->
     <div class="sidebar-section">
-      <h3>Step Info</h3>
+      <h3>Problem</h3>
+      <div class="problem-box" id="problemBox">Select an algorithm tab to begin.</div>
+    </div>
+
+    <!-- Items / Input -->
+    <div class="sidebar-section">
+      <h3>Input</h3>
+      <div id="inputDisplay"></div>
+    </div>
+
+    <!-- Recurrence (live) -->
+    <div class="sidebar-section">
+      <h3>Recurrence</h3>
+      <div class="recurrence-box" id="recurrenceBox">&mdash;</div>
+    </div>
+
+    <!-- Step Info + Decision -->
+    <div class="sidebar-section">
+      <h3>Current Step</h3>
       <div class="step-info" id="stepInfo">Select an algorithm tab to begin.</div>
-    </div>
-
-    <!-- Formula Bar -->
-    <div class="sidebar-section">
-      <h3>Formula</h3>
-      <div class="formula-bar" id="formulaBar">—</div>
-    </div>
-
-    <!-- Decision -->
-    <div class="sidebar-section">
-      <h3>Decision</h3>
-      <div class="step-info" id="decisionInfo">—</div>
     </div>
 
     <!-- Pseudocode -->
@@ -83,7 +197,7 @@
   </div>
 </div>
 
-<!-- Scripts (order matters) -->
+<!-- Scripts -->
 <script src="../shared/table-renderer.js"></script>
 <script src="../shared/controls.js"></script>
 <script src="algo-knapsack.js"></script>
