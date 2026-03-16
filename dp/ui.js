@@ -366,13 +366,13 @@
         var dd = deps[0];
         var ddVal = (cellStates[dd.row] && cellStates[dd.row][dd.col]) ? cellStates[dd.row][dd.col].value : '?';
         var preset = AlgoVis.DP_PRESETS.lcs;
-        latex = '\\text{' + preset.X[r - 1] + ' = ' + preset.Y[c - 1] + '} \\implies LCS[' + r + '][' + c + '] = \\color{#4ade80}{LCS[' + dd.row + '][' + dd.col + '] + 1} = \\color{#4ade80}{' + ddVal + '+1} = \\boxed{' + v + '}';
+        latex = preset.X[r - 1] + ' = ' + preset.Y[c - 1] + ' \\Rightarrow LCS[' + r + '][' + c + '] = \\color{#4ade80}{LCS[' + dd.row + '][' + dd.col + '] + 1} = \\color{#4ade80}{' + ddVal + '+1} = \\boxed{' + v + '}';
       } else {
         var upDep = deps[0], leftDep = deps[1];
         var upVal = (cellStates[upDep.row] && cellStates[upDep.row][upDep.col]) ? cellStates[upDep.row][upDep.col].value : '?';
         var leftVal = (cellStates[leftDep.row] && cellStates[leftDep.row][leftDep.col]) ? cellStates[leftDep.row][leftDep.col].value : '?';
         var preset = AlgoVis.DP_PRESETS.lcs;
-        latex = '\\text{' + preset.X[r - 1] + ' \\neq ' + preset.Y[c - 1] + '} \\implies LCS[' + r + '][' + c + '] = \\max(\\color{#fbbf24}{' + upVal + '},\\;\\color{#fbbf24}{' + leftVal + '}) = \\boxed{' + v + '}';
+        latex = preset.X[r - 1] + ' \\neq ' + preset.Y[c - 1] + ' \\Rightarrow LCS[' + r + '][' + c + '] = \\max(\\color{#fbbf24}{' + upVal + '},\\;\\color{#fbbf24}{' + leftVal + '}) = \\boxed{' + v + '}';
       }
     } else if (activeTab === 'lis') {
       if (isBase) {
@@ -401,7 +401,7 @@
         var dd = deps[0];
         var ddVal = (cellStates[dd.row] && cellStates[dd.row][dd.col]) ? cellStates[dd.row][dd.col].value : '?';
         var preset = AlgoVis.DP_PRESETS.editDistance;
-        latex = '\\text{' + preset.X[r - 1] + ' = ' + preset.Y[c - 1] + '} \\implies ed[' + r + '][' + c + '] = \\color{#4ade80}{ed[' + dd.row + '][' + dd.col + ']} = \\boxed{' + v + '}';
+        latex = preset.X[r - 1] + ' = ' + preset.Y[c - 1] + ' \\Rightarrow ed[' + r + '][' + c + '] = \\color{#4ade80}{ed[' + dd.row + '][' + dd.col + ']} = \\boxed{' + v + '}';
       } else {
         var preset = AlgoVis.DP_PRESETS.editDistance;
         // deps: [delete=i-1,j], [insert=i,j-1], [replace=i-1,j-1]
@@ -412,7 +412,7 @@
           var dv = (cellStates[dep.row] && cellStates[dep.row][dep.col]) ? cellStates[dep.row][dep.col].value : '?';
           vals.push(dv);
         }
-        latex = '\\text{' + preset.X[r - 1] + ' \\neq ' + preset.Y[c - 1] + '} \\implies ed[' + r + '][' + c + '] = 1 + \\min(';
+        latex = preset.X[r - 1] + ' \\neq ' + preset.Y[c - 1] + ' \\Rightarrow ed[' + r + '][' + c + '] = 1 + \\min(';
         var minParts = [];
         for (var di = 0; di < vals.length; di++) {
           minParts.push('\\color{#fbbf24}{\\underbrace{' + vals[di] + '}_{' + labels[di] + '}}');
