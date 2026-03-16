@@ -72,7 +72,9 @@ AlgoVis.renderGraph = function (canvas, config) {
     'finalized': { fill: '#0a2a15', stroke: '#4ade80' }
   };
 
-  // --- Draw edges ---
+  // --- Draw edge lines (below vertices) ---
+  var arrowsToDraw = []; // collect arrows to draw AFTER vertices
+
   edges.forEach(function (edge) {
     var a = pos[edge.u];
     var b = pos[edge.v];
@@ -90,28 +92,9 @@ AlgoVis.renderGraph = function (canvas, config) {
     ctx.stroke();
     ctx.restore();
 
-    // Draw arrowhead if directed
+    // Collect arrow data for later (drawn on top of vertices)
     if (config.directed) {
-      var dx = b.x - a.x;
-      var dy = b.y - a.y;
-      var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      // Arrow tip sits at the edge of the target circle
-      var tipX = b.x - (dx / len) * (radius + 2);
-      var tipY = b.y - (dy / len) * (radius + 2);
-      var arrowLen = 24;
-      var arrowAngle = Math.PI / 5;
-      var angle = Math.atan2(dy, dx);
-      // Use a brighter color for default edges so arrows are visible
-      var arrowColor = style.color === '#2a2a4a' ? '#666' : style.color;
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(tipX, tipY);
-      ctx.lineTo(tipX - arrowLen * Math.cos(angle - arrowAngle), tipY - arrowLen * Math.sin(angle - arrowAngle));
-      ctx.lineTo(tipX - arrowLen * Math.cos(angle + arrowAngle), tipY - arrowLen * Math.sin(angle + arrowAngle));
-      ctx.closePath();
-      ctx.fillStyle = arrowColor;
-      ctx.fill();
-      ctx.restore();
+      arrowsToDraw.push({ a: a, b: b, style: style });
     }
 
     // Weight label
@@ -194,5 +177,39 @@ AlgoVis.renderGraph = function (canvas, config) {
       ctx.fillText(String(dist), p.x, p.y - radius - 6);
       ctx.restore();
     }
+  });
+
+  // --- Draw arrowheads ON TOP of vertices (so they're visible) ---
+  arrowsToDraw.forEach(function (arrow) {
+    var a = arrow.a;
+    var b = arrow.b;
+    var style = arrow.style;
+
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var angle = Math.atan2(dy, dx);
+
+    // Position arrow tip just outside the target circle
+    var tipX = b.x - (dx / len) * (radius + 4);
+    var tipY = b.y - (dy / len) * (radius + 4);
+    var arrowLen = 18;
+    var arrowAngle = Math.PI / 5;
+
+    var arrowColor = style.color === '#2a2a4a' ? '#aaa' : style.color;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - arrowLen * Math.cos(angle - arrowAngle), tipY - arrowLen * Math.sin(angle - arrowAngle));
+    ctx.lineTo(tipX - arrowLen * Math.cos(angle + arrowAngle), tipY - arrowLen * Math.sin(angle + arrowAngle));
+    ctx.closePath();
+    ctx.fillStyle = arrowColor;
+    ctx.fill();
+    // Add outline for extra visibility
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = arrowColor;
+    ctx.stroke();
+    ctx.restore();
   });
 };
